@@ -1,0 +1,24 @@
+seed: 42
+
+data:
+  demo_npz_path: "data_demo/demo_36x36.npz"
+
+split:
+  test_size: 0.2
+
+features:
+  flatten: true
+  use_pca: true
+  pca_n_components: 64   # you can change later
+
+optuna:
+  n_trials: 50
+  cv_folds: 5
+  scoring: "f1"          # options: f1, f1_weighted, average_precision
+
+xgb:
+  tree_method: "hist"
+  nthread: 1
+
+outputs:
+  dir: "outputs/demo_run"

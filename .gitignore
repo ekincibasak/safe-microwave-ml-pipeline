@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Outputs
+outputs/
+
+# Data
+data/
+data_demo/
+
+# System
+.DS_Store
+
