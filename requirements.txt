@@ -5,3 +5,4 @@ xgboost
 optuna
 joblib
 matplotlib
+torch
