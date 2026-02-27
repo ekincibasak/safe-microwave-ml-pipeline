@@ -1,94 +1,54 @@
-import os
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
-from neuralop.models import FNO
-from mask_utils import (
-    read_sparam_as_tensor,
-    generate_mask_from_location,
-    parse_file_info
-)
+# Safe Microwave ML Pipeline (Demo)
 
+A privacy-safe, fully reproducible machine learning pipeline inspired by microwave scattering classification workflows.
 
-# ------------------------------
-# 📁 Paths
-# ------------------------------
-test_dir = rtest_dir = r"C:\Users\RTX4090\Desktop\currently_working\basak_in_lab\eight_report\reading_location\data\test_healty"
-model_path = r"C:\Users\RTX4090\Desktop\currently_working\basak_in_lab\nineth_report\tumor_50localization_fno.pt"
-save_dir = r"C:\Users\RTX4090\Desktop\the_code_that_used_for_location\30_07_2025\results"
-os.makedirs(save_dir, exist_ok=True)
+This repository demonstrates:
 
-# ------------------------------
-# ⚙️ Load model
-# ------------------------------
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+- Structured data processing for 2D scattering matrices (36×36)
+- Train-only PCA (no data leakage)
+- XGBoost classifier with Optuna hyperparameter optimization
+- End-to-end reproducible evaluation
+- Clean project structure (configs / scripts / src separation)
 
-fno = FNO(
-    in_channels=38,
-    out_channels=1,
-    n_modes=(16, 16),
-    hidden_channels=64,
-    n_layers=4,
-    padding=9
-).to(device)
+⚠️ This repository uses synthetic demo data.
+No real patient `.s36p` files or metadata are included.
 
-fno.load_state_dict(torch.load(model_path, map_location=device, weights_only=False))
-fno.eval()
+---
 
-# ------------------------------
-# 🔍 Test each healthy patient
-# ------------------------------
-test_files = [f for f in os.listdir(test_dir) if f.endswith(".s36p")]
+## Project Motivation
 
-for fname in test_files:
-    path = os.path.join(test_dir, fname)
+Microwave scattering data produces structured matrices that require careful preprocessing before classification.  
+This demo replicates the workflow while ensuring:
 
-    # Read S-parameters
-    sparam = read_sparam_as_tensor(path)  # (38, 36, 36)
-    sparam = np.transpose(sparam, (1, 2, 0))  # → (36, 36, 38)
-    sparam_tensor = torch.tensor(sparam, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0).to(device)  # (1, 38, 36, 36)
+- No information leakage (PCA fit only on training data)
+- Reproducibility via seeded runs
+- Config-driven experimentation
+- Clean separation between data, features, and model logic
 
-    # Predict mask
-    with torch.no_grad():
-        pred_mask = fno(sparam_tensor).cpu().squeeze().numpy()
+---
 
-    # Use an all-zero mask for healthy patients
-    true_mask = np.zeros((36, 36), dtype=np.float32)
+## Pipeline Overview
 
-    # --- Compute metrics ---
-    threshold = 0.5
-    pred_binary = (pred_mask >= threshold).astype(np.uint8)
-    true_binary = (true_mask >= 0.5).astype(np.uint8)
+1. Generate synthetic 36×36 demo scattering data
+2. Split into train/test
+3. Flatten features
+4. Fit PCA on training set only
+5. Train XGBoost with Optuna optimization
+6. Evaluate on held-out test set
+7. Save metrics and confusion matrix
 
-    pred_flat = pred_binary.flatten()
-    true_flat = true_binary.flatten()
+---
 
-    # Dice Score
-    intersection = np.sum(pred_flat * true_flat)
-    dice_score = (2. * intersection) / (np.sum(pred_flat) + np.sum(true_flat) + 1e-8)
+## Quickstart
 
-    # IoU
-    union = np.sum((pred_flat + true_flat) > 0)
-    iou = intersection / (union + 1e-8)
+```bash
+pip install -r requirements.txt
 
-    # Pixel Accuracy
-    accuracy = np.sum(pred_flat == true_flat) / len(pred_flat)
+# 1️⃣ Generate synthetic demo data
+python scripts/make_demo_data.py
 
-    # MSE
-    mse = np.mean((pred_mask - true_mask) ** 2)
+# 2️⃣ Train model (PCA fit on training only)
+PYTHONPATH=. python scripts/train_xgb.py --config configs/demo_36x36_pca.yaml
 
-    # Print metrics
-    print(f"🟢 File: {fname} (Healthy)")
-    print(f" Dice Score     : {dice_score:.4f}")
-    print(f" IoU            : {iou:.4f}")
-    print(f" Pixel Accuracy : {accuracy:.4f}")
-    print(f" MSE            : {mse:.6f}")
-    print("-" * 50)
-
-    # Optional: save the prediction mask as an image
-    plt.imshow(pred_mask, cmap='hot')
-    plt.title(f"Predicted Mask - {fname}", fontsize=8)
-    plt.axis("off")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{fname.replace('.s36p', '')}_pred.png"), dpi=300)
-    plt.close()
+# 3️⃣ Evaluate model
+PYTHONPATH=. python scripts/eval_xgb.py --config configs/demo_36x36_pca.yaml
