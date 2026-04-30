@@ -1,4 +1,4 @@
-# Safe Microwave ML Pipeline (Demo)  
+## SignalMatrixML: A Reproducible Signal Processing and Machine Learning Pipeline
    
 A privacy-safe, fully reproducible ML pipeline inspired by microwave scattering classification workflows.  
    
