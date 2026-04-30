@@ -3,10 +3,7 @@
 A privacy-safe, fully reproducible ML pipeline inspired by microwave scattering classification workflows.  
    
 This repository is designed as a **public-safe twin** of a real microwave-scattering project: it runs end-to-end on **synthetic demo matrices** (36×36) while demonstrating the same engineering and ML practices used in real medical / sensing pipelines.  
-   
-✅ No real patient `.s36p` files.    
-✅ No patient identifiers or metadata.    
-✅ Fully runnable and reproducible.  
+
    
 ---  
    
